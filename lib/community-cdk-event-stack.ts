@@ -1,18 +1,22 @@
-import * as sns from '@aws-cdk/aws-sns';
-import * as subs from '@aws-cdk/aws-sns-subscriptions';
-import * as sqs from '@aws-cdk/aws-sqs';
-import * as cdk from '@aws-cdk/core';
+import * as cdk from "@aws-cdk/core";
+import * as lambda from "@aws-cdk/aws-lambda";
+import * as apiGateway from "@aws-cdk/aws-apigateway";
 
 export class CommunityCdkEventStack extends cdk.Stack {
-  constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
-    super(scope, id, props);
+    constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
+        super(scope, id, props);
 
-    const queue = new sqs.Queue(this, 'CommunityCdkEventQueue', {
-      visibilityTimeout: cdk.Duration.seconds(300)
-    });
+        const helloLambda = new lambda.Function(this, "lambdaFunction", {
+            code: lambda.Code.asset("lambda"),
+            handler: "hello.handler",
+            runtime: lambda.Runtime.NODEJS_12_X,
+            timeout: cdk.Duration.seconds(10),
+            memorySize: 256,
+            environment: { SECRET_DB_KEY: "password1" }
+        });
 
-    const topic = new sns.Topic(this, 'CommunityCdkEventTopic');
-
-    topic.addSubscription(new subs.SqsSubscription(queue));
-  }
+        new apiGateway.LambdaRestApi(this, "myendpoint", {
+            handler: helloLambda
+        });
+    }
 }
